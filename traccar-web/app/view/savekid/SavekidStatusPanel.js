@@ -243,8 +243,10 @@ Ext.define('Traccar.view.savekid.SavekidStatusPanel', {
                 me.loadingLastChild = true;
                 me.loadLastChild(function () {
                     me.loadingLastChild = false;
-                    me.loadStatusData();
-                    me.loadPositions();
+                    if (me.getChildId()) {
+                        me.loadStatusData();
+                        me.loadPositions();
+                    }
                 });
             }
             return;
