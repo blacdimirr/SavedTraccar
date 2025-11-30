@@ -10,7 +10,8 @@ Ext.define('Traccar.view.savekid.SavekidStatusPanel', {
     config: {
         childId: null,
         deviceId: null,
-        autoLoad: true
+        autoLoad: true,
+        autoLoadLastChild: true
     },
 
     layout: {
@@ -33,8 +34,7 @@ Ext.define('Traccar.view.savekid.SavekidStatusPanel', {
 
         me.on('afterrender', function () {
             if (me.getAutoLoad()) {
-                me.loadStatusData();
-                me.loadPositions();
+                me.initializeChildContext();
             }
             me.startAutoRefresh();
         });
@@ -239,6 +239,14 @@ Ext.define('Traccar.view.savekid.SavekidStatusPanel', {
     loadStatusData: function () {
         var me = this;
         if (!me.getChildId()) {
+            if (me.getAutoLoadLastChild() && !me.loadingLastChild) {
+                me.loadingLastChild = true;
+                me.loadLastChild(function () {
+                    me.loadingLastChild = false;
+                    me.loadStatusData();
+                    me.loadPositions();
+                });
+            }
             return;
         }
         Ext.Ajax.request({
@@ -253,6 +261,48 @@ Ext.define('Traccar.view.savekid.SavekidStatusPanel', {
             },
             failure: function () {
                 Ext.Msg.alert('Error', 'No fue posible cargar el estado actual.');
+            }
+        });
+    },
+
+    initializeChildContext: function () {
+        var me = this;
+        if (me.getChildId()) {
+            me.loadStatusData();
+            me.loadPositions();
+            return;
+        }
+
+        if (me.getAutoLoadLastChild()) {
+            me.loadLastChild(function () {
+                me.loadStatusData();
+                me.loadPositions();
+            });
+        }
+    },
+
+    loadLastChild: function (callback) {
+        var me = this;
+        Ext.Ajax.request({
+            url: '/api/savekid/children',
+            method: 'GET',
+            success: function (response) {
+                var data = Ext.decode(response.responseText || '[]');
+                if (data && data.length > 0) {
+                    me.setChildId(data[0].id);
+                    if (data[0].deviceId) {
+                        me.setDeviceId(data[0].deviceId);
+                    }
+                }
+                if (callback) {
+                    callback();
+                }
+            },
+            failure: function () {
+                Ext.Msg.alert('Error', 'No fue posible cargar el niño más reciente.');
+                if (callback) {
+                    callback();
+                }
             }
         });
     },
