@@ -160,6 +160,23 @@ export default (t) => useMemo(() => ({
     name: t('positionHeartRate'),
     type: 'number',
   },
+  bodyTemperature: {
+    name: t('positionBodyTemperature'),
+    type: 'number',
+    dataType: 'temperature',
+  },
+  sleepMinutes: {
+    name: t('positionSleepMinutes'),
+    type: 'number',
+  },
+  sedentary: {
+    name: t('positionSedentary'),
+    type: 'boolean',
+  },
+  sosActive: {
+    name: t('positionSosActive'),
+    type: 'boolean',
+  },
   input: {
     name: t('positionInput'),
     type: 'number',
