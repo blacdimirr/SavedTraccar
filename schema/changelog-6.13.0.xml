@@ -71,6 +71,33 @@
       <column name="timestamp" />
     </createIndex>
 
+    <createTable tableName="tc_user_child">
+      <column name="userid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="childid" type="INT">
+        <constraints nullable="false" />
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_user_child" baseColumnNames="userid"
+                             constraintName="fk_user_child_userid"
+                             referencedTableName="tc_users" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <addForeignKeyConstraint baseTableName="tc_user_child" baseColumnNames="childid"
+                             constraintName="fk_user_child_childid"
+                             referencedTableName="tc_children" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <createIndex indexName="tc_user_child_userid_idx" tableName="tc_user_child">
+      <column name="userid" />
+    </createIndex>
+
+    <createIndex indexName="tc_user_child_childid_idx" tableName="tc_user_child">
+      <column name="childid" />
+    </createIndex>
+
   </changeSet>
 
 </databaseChangeLog>
