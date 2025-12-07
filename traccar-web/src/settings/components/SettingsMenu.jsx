@@ -15,6 +15,7 @@ import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import HelpIcon from '@mui/icons-material/Help';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import ChildCareIcon from '@mui/icons-material/ChildCare';
 import { useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from '../../common/components/LocalizationProvider';
@@ -71,6 +72,13 @@ const SettingsMenu = () => {
               link="/geofences"
               icon={<CreateIcon />}
               selected={location.pathname.startsWith('/settings/geofence')}
+            />
+            <MenuItem
+              title={t('savekidChildrenTitle')}
+              link="/settings/savekid/children"
+              icon={<ChildCareIcon />}
+              selected={location.pathname.startsWith('/settings/savekid/child')
+                || location.pathname.startsWith('/settings/savekid/children')}
             />
             {!features.disableGroups && (
               <MenuItem

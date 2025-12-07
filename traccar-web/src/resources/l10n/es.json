@@ -627,6 +627,17 @@
     "categoryTruck": "Camión",
     "categoryVan": "Furgoneta",
     "categoryScooter": "Moto",
+    "savekidModule": "SaveKID",
+    "savekidChildrenTitle": "Perfiles de Niños",
+    "savekidChild": "Perfil de Niño",
+    "savekidLastName": "Apellido",
+    "savekidAge": "Edad",
+    "savekidDevice": "Dispositivo",
+    "savekidBirthDate": "Fecha de Nacimiento",
+    "savekidHeight": "Estatura (cm)",
+    "savekidWeight": "Peso (kg)",
+    "savekidConditions": "Condiciones médicas",
+    "savekidBio": "Información del niño",
     "maintenanceStart": "Iniciar",
     "maintenancePeriod": "Período"
-}
+ }
