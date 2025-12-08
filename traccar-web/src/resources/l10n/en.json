@@ -627,6 +627,17 @@
     "categoryTruck": "Truck",
     "categoryVan": "Van",
     "categoryScooter": "Scooter",
+    "savekidModule": "SaveKID",
+    "savekidChildrenTitle": "Children Profiles",
+    "savekidChild": "Child Profile",
+    "savekidLastName": "Last Name",
+    "savekidAge": "Age",
+    "savekidDevice": "Device",
+    "savekidBirthDate": "Birth Date",
+    "savekidHeight": "Height (cm)",
+    "savekidWeight": "Weight (kg)",
+    "savekidConditions": "Medical Conditions",
+    "savekidBio": "Child Information",
     "maintenanceStart": "Start",
     "maintenancePeriod": "Period"
 }

@@ -20,9 +20,12 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.Position;
+import org.traccar.model.SavekidChild;
+import org.traccar.model.SavekidChildHealth;
 import org.traccar.model.SavekidHealth;
 import org.traccar.storage.Storage;
 import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
 import java.util.Date;
@@ -38,6 +41,16 @@ public class SavekidHealthHandler extends BasePositionHandler {
     @Inject
     public SavekidHealthHandler(Storage storage) {
         this.storage = storage;
+    }
+
+    private SavekidChild getChildForDevice(long deviceId) {
+        try {
+            return storage.getObject(SavekidChild.class, new Request(
+                    new Columns.All(), new Condition.Equals("deviceId", deviceId)));
+        } catch (Exception error) {
+            LOGGER.warn("Failed to fetch SaveKID child for device {}", deviceId, error);
+            return null;
+        }
     }
 
     private SavekidHealth buildHealthRecord(Position position) {
@@ -92,6 +105,19 @@ public class SavekidHealthHandler extends BasePositionHandler {
             SavekidHealth health = buildHealthRecord(position);
             if (health != null) {
                 storage.addObject(health, new Request(new Columns.Exclude("id")));
+
+                SavekidChild child = getChildForDevice(position.getDeviceId());
+                if (child != null) {
+                    SavekidChildHealth childHealth = new SavekidChildHealth();
+                    childHealth.setChildId(child.getId());
+                    childHealth.setHeartRate(health.getHeartRate());
+                    childHealth.setTemperature(health.getBodyTemperature());
+                    childHealth.setSteps(health.getSteps());
+                    childHealth.setSleep(health.getSleepMinutes());
+                    childHealth.setTimestamp(health.getRecordTime());
+
+                    storage.addObject(childHealth, new Request(new Columns.Exclude("id")));
+                }
             }
         } catch (Exception error) {
             LOGGER.warn("Failed to store SaveKID health data", error);

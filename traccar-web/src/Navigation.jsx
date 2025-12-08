@@ -61,6 +61,8 @@ import { generateLoginToken } from './common/components/NativeInterface';
 import { useLocalization } from './common/components/LocalizationProvider';
 import fetchOrThrow from './common/util/fetchOrThrow';
 import AuditPage from './reports/AuditPage';
+import ChildrenPage from './savekid/ChildrenPage';
+import ChildPage from './savekid/ChildPage';
 
 const Navigation = () => {
   const dispatch = useDispatch();
@@ -116,8 +118,8 @@ const Navigation = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/change-server" element={<ChangeServerPage />} />
-      <Route path="/" element={<App />}>
-        <Route index element={<MainPage />} />
+        <Route path="/" element={<App />}>
+          <Route index element={<MainPage />} />
 
         <Route path="position/:id" element={<PositionPage />} />
         <Route path="network/:positionId" element={<NetworkPage />} />
@@ -161,6 +163,9 @@ const Navigation = () => {
           <Route path="notification/:id" element={<NotificationPage />} />
           <Route path="notification" element={<NotificationPage />} />
           <Route path="preferences" element={<PreferencesPage />} />
+          <Route path="savekid/children" element={<ChildrenPage />} />
+          <Route path="savekid/child/:id" element={<ChildPage />} />
+          <Route path="savekid/child" element={<ChildPage />} />
           <Route path="server" element={<ServerPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="user/:id/connections" element={<UserConnectionsPage />} />
