@@ -71,6 +71,10 @@
       <column name="timestamp" />
     </createIndex>
 
+  </changeSet>
+
+  <changeSet author="savekid" id="changelog-6.13.0-user-child">
+
     <createTable tableName="tc_user_child">
       <column name="userid" type="INT">
         <constraints nullable="false" />
@@ -96,6 +100,43 @@
 
     <createIndex indexName="tc_user_child_childid_idx" tableName="tc_user_child">
       <column name="childid" />
+    </createIndex>
+
+  </changeSet>
+
+  <changeSet author="savekid" id="changelog-6.13.0-user-savekidChild">
+
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <tableExists tableName="tc_user_savekidChild" />
+      </not>
+    </preConditions>
+
+    <createTable tableName="tc_user_savekidChild">
+      <column name="userid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="savekidchildid" type="INT">
+        <constraints nullable="false" />
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_user_savekidChild" baseColumnNames="userid"
+                             constraintName="fk_user_savekidChild_userid"
+                             referencedTableName="tc_users" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <addForeignKeyConstraint baseTableName="tc_user_savekidChild" baseColumnNames="savekidchildid"
+                             constraintName="fk_user_savekidChild_childid"
+                             referencedTableName="tc_children" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <createIndex indexName="tc_user_savekidChild_userid_idx" tableName="tc_user_savekidChild">
+      <column name="userid" />
+    </createIndex>
+
+    <createIndex indexName="tc_user_savekidChild_childid_idx" tableName="tc_user_savekidChild">
+      <column name="savekidchildid" />
     </createIndex>
 
   </changeSet>
