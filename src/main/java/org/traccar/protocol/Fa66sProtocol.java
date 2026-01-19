@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 SaveKID
+ * Copyright 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package org.traccar.protocol;
 
-import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
+import org.traccar.CharacterDelimiterFrameDecoder;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 import org.traccar.config.Config;
@@ -32,7 +32,7 @@ public class Fa66sProtocol extends BaseProtocol {
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
-                pipeline.addLast(new LineBasedFrameDecoder(1024));
+                pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, '#'));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new Fa66sProtocolDecoder(Fa66sProtocol.this));
@@ -40,4 +40,7 @@ public class Fa66sProtocol extends BaseProtocol {
         });
     }
 
+    /**
+     * To enable FA66S listeners, configure a port in {@code traccar.xml} (for example {@code fa66s.port = 5130}).
+     */
 }
