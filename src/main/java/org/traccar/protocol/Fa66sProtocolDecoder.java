@@ -161,12 +161,17 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             position.setTime(time != null ? time : new Date());
 
             String valid = getValue(payload, 2);
-            position.setValid("A".equalsIgnoreCase(valid));
+            // Devices can send "V" while still providing usable LTE fixes.
+            boolean validFix = "A".equalsIgnoreCase(valid) || "V".equalsIgnoreCase(valid);
 
             double latitude = parseCoordinate(getValue(payload, 3), getValue(payload, 4));
             double longitude = parseCoordinate(getValue(payload, 5), getValue(payload, 6));
             position.setLatitude(latitude);
             position.setLongitude(longitude);
+            if (!validFix && latitude > 0 && longitude > 0) {
+                validFix = true;
+            }
+            position.setValid(validFix);
 
             double speed = parseDouble(getValue(payload, 7));
             if (!Double.isNaN(speed)) {
@@ -239,17 +244,23 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             if (date == null || time == null || date.length() < 6 || time.length() < 6) {
                 return null;
             }
-            int year = parseInt(date.substring(0, 2), -1);
+            // FA66S LTE payload uses DDMMYY format (e.g. 190126 -> 19/01/2026).
+            int day = parseInt(date.substring(0, 2), -1);
             int month = parseInt(date.substring(2, 4), -1);
-            int day = parseInt(date.substring(4, 6), -1);
+            int year = parseInt(date.substring(4, 6), -1);
             int hour = parseInt(time.substring(0, 2), -1);
             int minute = parseInt(time.substring(2, 4), -1);
             int second = parseInt(time.substring(4, 6), -1);
-            if (year < 0 || month < 0 || day < 0 || hour < 0 || minute < 0 || second < 0) {
+            if (year < 0 || year > 99
+                    || month < 1 || month > 12
+                    || day < 1 || day > 31
+                    || hour < 0 || hour > 23
+                    || minute < 0 || minute > 59
+                    || second < 0 || second > 59) {
                 return null;
             }
             return new DateBuilder()
-                    .setDate(year, month, day)
+                    .setDate(2000 + year, month, day)
                     .setTime(hour, minute, second)
                     .getDate();
         } catch (NumberFormatException | IndexOutOfBoundsException ex) {
