@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+  logicalFilePath="changelog-6.12.0">
+
+  <changeSet author="savekid" id="changelog-6.12.0">
+
+    <createTable tableName="tc_savekid_health">
+      <column name="id" type="INT" autoIncrement="true">
+        <constraints primaryKey="true" />
+      </column>
+      <column name="deviceid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="positionid" type="INT" />
+      <column name="recordtime" type="TIMESTAMP">
+        <constraints nullable="false" />
+      </column>
+      <column name="heartrate" type="INT" />
+      <column name="bodytemperature" type="DOUBLE" />
+      <column name="steps" type="INT" />
+      <column name="sleepminutes" type="INT" />
+      <column name="sosactive" type="BOOLEAN" />
+      <column name="sedentary" type="BOOLEAN" />
+      <column name="batterylevel" type="INT" />
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_savekid_health" baseColumnNames="deviceid"
+                             constraintName="fk_savekid_health_deviceid"
+                             referencedTableName="tc_devices" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <addForeignKeyConstraint baseTableName="tc_savekid_health" baseColumnNames="positionid"
+                             constraintName="fk_savekid_health_positionid"
+                             referencedTableName="tc_positions" referencedColumnNames="id"
+                             onDelete="SET NULL" />
+
+    <createIndex indexName="tc_savekid_health_deviceid_idx" tableName="tc_savekid_health">
+      <column name="deviceid" />
+    </createIndex>
+
+    <createIndex indexName="tc_savekid_health_recordtime_idx" tableName="tc_savekid_health">
+      <column name="recordtime" />
+    </createIndex>
+
+  </changeSet>
+
+</databaseChangeLog>

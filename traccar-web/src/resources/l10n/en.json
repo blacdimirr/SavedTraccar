@@ -302,6 +302,13 @@
     "positionSteps": "Steps",
     "positionInput": "Input",
     "positionHeartRate": "Heart Rate",
+<<<<<<< HEAD
+=======
+    "positionBodyTemperature": "Body Temperature",
+    "positionSleepMinutes": "Sleep Duration",
+    "positionSedentary": "Sedentary",
+    "positionSosActive": "SOS Active",
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
     "positionOutput": "Output",
     "positionBatteryLevel": "Battery Level",
     "positionFuelConsumption": "Fuel Consumption",
@@ -623,6 +630,20 @@
     "categoryTruck": "Truck",
     "categoryVan": "Van",
     "categoryScooter": "Scooter",
+<<<<<<< HEAD
+=======
+    "savekidModule": "SaveKID",
+    "savekidChildrenTitle": "Children Profiles",
+    "savekidChild": "Child Profile",
+    "savekidLastName": "Last Name",
+    "savekidAge": "Age",
+    "savekidDevice": "Device",
+    "savekidBirthDate": "Birth Date",
+    "savekidHeight": "Height (cm)",
+    "savekidWeight": "Weight (kg)",
+    "savekidConditions": "Medical Conditions",
+    "savekidBio": "Child Information",
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
     "maintenanceStart": "Start",
     "maintenancePeriod": "Period"
 }

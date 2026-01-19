@@ -65,6 +65,11 @@ const PositionValue = ({ position, property, attribute }) => {
         return value != null ? formatVoltage(value, t) : '';
       case 'batteryLevel':
         return value != null ? formatPercentage(value) : '';
+<<<<<<< HEAD
+=======
+      case 'bodyTemperature':
+        return value != null ? formatTemperature(value) : '';
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
       case 'volume':
         return value != null ? formatVolume(value, volumeUnit, t) : '';
       case 'fuelConsumption':
@@ -82,6 +87,14 @@ const PositionValue = ({ position, property, attribute }) => {
         return value != null ? formatDistance(value, distanceUnit, t) : '';
       case 'hours':
         return value != null ? formatNumericHours(value, t) : '';
+<<<<<<< HEAD
+=======
+      case 'sleepMinutes':
+        return value != null ? formatNumericHours(value / 60, t) : '';
+      case 'sedentary':
+      case 'sosActive':
+        return formatBoolean(value, t);
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
       default:
         if (typeof value === 'number') {
           return formatNumber(value);

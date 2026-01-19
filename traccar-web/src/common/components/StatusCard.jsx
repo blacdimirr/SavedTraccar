@@ -132,7 +132,14 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const deviceImage = device?.attributes?.deviceImage;
 
   const positionAttributes = usePositionAttributes(t);
+<<<<<<< HEAD
   const positionItems = useAttributePreference('positionItems', 'fixTime,address,speed,totalDistance');
+=======
+  const positionItems = useAttributePreference(
+    'positionItems',
+    'fixTime,address,speed,totalDistance,heartRate,bodyTemperature,steps,sleepMinutes,sosActive',
+  );
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
 
   const navigationAppLink = useAttributePreference('navigationAppLink');
   const navigationAppTitle = useAttributePreference('navigationAppTitle');

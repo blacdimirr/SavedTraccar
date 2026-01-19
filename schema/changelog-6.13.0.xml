@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+  logicalFilePath="changelog-6.13.0">
+
+  <changeSet author="savekid" id="changelog-6.13.0">
+
+    <createTable tableName="tc_children">
+      <column name="id" type="INT" autoIncrement="true">
+        <constraints primaryKey="true" />
+      </column>
+      <column name="name" type="VARCHAR(128)">
+        <constraints nullable="false" />
+      </column>
+      <column name="lastname" type="VARCHAR(128)">
+        <constraints nullable="false" />
+      </column>
+      <column name="birthdate" type="TIMESTAMP" />
+      <column name="height" type="DOUBLE" />
+      <column name="weight" type="DOUBLE" />
+      <column name="conditions" type="VARCHAR(1024)" />
+      <column name="deviceid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="createdat" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false" />
+      </column>
+      <column name="updatedat" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false" />
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_children" baseColumnNames="deviceid"
+                             constraintName="fk_children_deviceid"
+                             referencedTableName="tc_devices" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <createIndex indexName="tc_children_deviceid_idx" tableName="tc_children">
+      <column name="deviceid" />
+    </createIndex>
+
+    <createTable tableName="tc_children_health">
+      <column name="id" type="INT" autoIncrement="true">
+        <constraints primaryKey="true" />
+      </column>
+      <column name="childid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="heartrate" type="INT" />
+      <column name="temperature" type="DOUBLE" />
+      <column name="steps" type="INT" />
+      <column name="sleep" type="INT" />
+      <column name="timestamp" type="TIMESTAMP">
+        <constraints nullable="false" />
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_children_health" baseColumnNames="childid"
+                             constraintName="fk_children_health_childid"
+                             referencedTableName="tc_children" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <createIndex indexName="tc_children_health_childid_idx" tableName="tc_children_health">
+      <column name="childid" />
+    </createIndex>
+
+    <createIndex indexName="tc_children_health_timestamp_idx" tableName="tc_children_health">
+      <column name="timestamp" />
+    </createIndex>
+
+    <createTable tableName="tc_user_savekidChild">
+      <column name="userid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="savekidChildId" type="INT">
+        <constraints nullable="false" />
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_user_savekidChild" baseColumnNames="userid"
+                             constraintName="fk_user_savekidChild_userid"
+                             referencedTableName="tc_users" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <addForeignKeyConstraint baseTableName="tc_user_savekidChild" baseColumnNames="savekidChildId"
+                             constraintName="fk_user_savekidChild_childid"
+                             referencedTableName="tc_children" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <createIndex indexName="tc_user_savekidChild_userid_idx" tableName="tc_user_savekidChild">
+      <column name="userid" />
+    </createIndex>
+
+    <createIndex indexName="tc_user_savekidChild_childid_idx" tableName="tc_user_savekidChild">
+      <column name="savekidChildId" />
+    </createIndex>
+
+    <createTable tableName="tc_savekid_health">
+      <column name="id" type="INT" autoIncrement="true">
+        <constraints primaryKey="true" />
+      </column>
+      <column name="deviceid" type="INT">
+        <constraints nullable="false" />
+      </column>
+      <column name="positionid" type="INT" />
+      <column name="recordtime" type="TIMESTAMP">
+        <constraints nullable="false" />
+      </column>
+      <column name="heartrate" type="INT" />
+      <column name="bodytemperature" type="DOUBLE" />
+      <column name="steps" type="INT" />
+      <column name="sleepminutes" type="INT" />
+      <column name="sosactive" type="BOOLEAN" />
+      <column name="sedentary" type="BOOLEAN" />
+      <column name="batterylevel" type="INT" />
+    </createTable>
+
+    <addForeignKeyConstraint baseTableName="tc_savekid_health" baseColumnNames="deviceid"
+                             constraintName="fk_savekid_health_deviceid"
+                             referencedTableName="tc_devices" referencedColumnNames="id"
+                             onDelete="CASCADE" />
+
+    <addForeignKeyConstraint baseTableName="tc_savekid_health" baseColumnNames="positionid"
+                             constraintName="fk_savekid_health_positionid"
+                             referencedTableName="tc_positions" referencedColumnNames="id"
+                             onDelete="SET NULL" />
+
+    <createIndex indexName="tc_savekid_health_deviceid_idx" tableName="tc_savekid_health">
+      <column name="deviceid" />
+    </createIndex>
+
+    <createIndex indexName="tc_savekid_health_recordtime_idx" tableName="tc_savekid_health">
+      <column name="recordtime" />
+    </createIndex>
+
+  </changeSet>
+
+</databaseChangeLog>

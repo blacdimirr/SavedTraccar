@@ -44,6 +44,13 @@ public class Position extends Message {
     public static final String KEY_HOURS = "hours"; // milliseconds
     public static final String KEY_STEPS = "steps";
     public static final String KEY_HEART_RATE = "heartRate";
+<<<<<<< HEAD
+=======
+    public static final String KEY_BODY_TEMPERATURE = "bodyTemperature";
+    public static final String KEY_SLEEP_MINUTES = "sleepMinutes";
+    public static final String KEY_SEDENTARY = "sedentary";
+    public static final String KEY_SOS_ACTIVE = "sosActive";
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
     public static final String KEY_INPUT = "input";
     public static final String KEY_OUTPUT = "output";
     public static final String KEY_IMAGE = "image";

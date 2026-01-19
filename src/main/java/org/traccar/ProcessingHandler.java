@@ -40,6 +40,10 @@ import org.traccar.handler.MotionHandler;
 import org.traccar.handler.OutdatedHandler;
 import org.traccar.handler.PositionForwardingHandler;
 import org.traccar.handler.PostProcessHandler;
+<<<<<<< HEAD
+=======
+import org.traccar.handler.SavekidHealthHandler;
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
 import org.traccar.handler.SpeedLimitHandler;
 import org.traccar.handler.TimeHandler;
 import org.traccar.handler.events.AlarmEventHandler;
@@ -111,7 +115,12 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
                 CopyAttributesHandler.class,
                 EngineHoursHandler.class,
                 PositionForwardingHandler.class,
+<<<<<<< HEAD
                 DatabaseHandler.class)
+=======
+                DatabaseHandler.class,
+                SavekidHealthHandler.class)
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
                 .map((clazz) -> (BasePositionHandler) injector.getInstance(clazz))
                 .filter(Objects::nonNull)
                 .toList();

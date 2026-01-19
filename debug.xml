@@ -28,5 +28,9 @@
 
     <entry key='atrack.custom'>true</entry>
     <entry key='intellitrac.port'>6037</entry>
+<<<<<<< HEAD
+=======
+    <entry key='fa66s.port'>6216</entry>
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
 
 </properties>

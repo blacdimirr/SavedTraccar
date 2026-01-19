@@ -12,6 +12,10 @@ import carSvg from '../../resources/images/icon/car.svg';
 import camperSvg from '../../resources/images/icon/camper.svg';
 import craneSvg from '../../resources/images/icon/crane.svg';
 import defaultSvg from '../../resources/images/icon/default.svg';
+<<<<<<< HEAD
+=======
+import fa66sSvg from '../../resources/images/icon/fa66s.svg';
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
 import startSvg from '../../resources/images/icon/start.svg';
 import finishSvg from '../../resources/images/icon/finish.svg';
 import helicopterSvg from '../../resources/images/icon/helicopter.svg';
@@ -36,6 +40,10 @@ export const mapIcons = {
   camper: camperSvg,
   crane: craneSvg,
   default: defaultSvg,
+<<<<<<< HEAD
+=======
+  fa66s: fa66sSvg,
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
   finish: finishSvg,
   helicopter: helicopterSvg,
   motorcycle: motorcycleSvg,
@@ -59,6 +67,14 @@ export const mapIconKey = (category) => {
       return 'car';
     case 'trolleybus':
       return 'bus';
+<<<<<<< HEAD
+=======
+    case 'fa66s':
+    case 'watch':
+    case 'smartwatch':
+    case 'wearable':
+      return 'fa66s';
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
     default:
       return mapIcons.hasOwnProperty(category) ? category : 'default';
   }

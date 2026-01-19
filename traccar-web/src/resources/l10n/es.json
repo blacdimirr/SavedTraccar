@@ -302,6 +302,13 @@
     "positionSteps": "Pasos",
     "positionInput": "Entrada",
     "positionHeartRate": "Ritmo cardiaco",
+<<<<<<< HEAD
+=======
+    "positionBodyTemperature": "Temperatura corporal",
+    "positionSleepMinutes": "Duración de sueño",
+    "positionSedentary": "Sedentarismo",
+    "positionSosActive": "SOS activo",
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
     "positionOutput": "Salida",
     "positionBatteryLevel": "Nivel de batería",
     "positionFuelConsumption": "Consumo de combustible",
@@ -623,6 +630,23 @@
     "categoryTruck": "Camión",
     "categoryVan": "Furgoneta",
     "categoryScooter": "Moto",
+<<<<<<< HEAD
     "maintenanceStart": "Iniciar",
     "maintenancePeriod": "Período"
 }
+=======
+    "savekidModule": "SaveKID",
+    "savekidChildrenTitle": "Perfiles de Niños",
+    "savekidChild": "Perfil de Niño",
+    "savekidLastName": "Apellido",
+    "savekidAge": "Edad",
+    "savekidDevice": "Dispositivo",
+    "savekidBirthDate": "Fecha de Nacimiento",
+    "savekidHeight": "Estatura (cm)",
+    "savekidWeight": "Peso (kg)",
+    "savekidConditions": "Condiciones médicas",
+    "savekidBio": "Información del niño",
+    "maintenanceStart": "Iniciar",
+    "maintenancePeriod": "Período"
+ }
+>>>>>>> 1e552659b85a97f7c027b589d32dbb249287e27c
