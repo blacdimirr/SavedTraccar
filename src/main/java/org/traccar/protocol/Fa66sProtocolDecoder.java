@@ -62,7 +62,9 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
     private static final long MAPPING_TIMEOUT = 24 * 60 * 60 * 1000L;
 
-    private final Map<String, ImeiMapping> headerToImei = new ConcurrentHashMap<>();
+    private static final Pattern WIFI_PATTERN = Pattern.compile("(?i)^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}.*$");
+
+    private final Map<String, ImeiEntry> headerToImei = new ConcurrentHashMap<>();
 
     public Fa66sProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -83,11 +85,8 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         String sentence = (String) msg;
-        if (sentence.contains("3G*")) {
+        if (sentence.contains("[")) {
             List<String> frames = extractFrames(sentence);
-            if (frames.isEmpty()) {
-                frames = List.of(sentence);
-            }
             return decodeFrames(channel, remoteAddress, frames);
         }
 
@@ -160,10 +159,18 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
                 continue;
             }
 
+            if ("ICCID".equals(type)) {
+                String imei = getValue(payload, 1);
+                if (imei != null && !imei.isEmpty()) {
+                    updateImeiMapping(headerId, imei);
+                }
+                continue;
+            }
+
             if ("LK".equals(type)) {
                 String imei = getMappedImei(headerId);
                 if (imei == null) {
-                    LOGGER.warn("No IMEI mapped for headerId {}", headerId);
+                    LOGGER.warn("FA66S no IMEI mapped yet for headerId={} on LK", headerId);
                     continue;
                 }
                 DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -179,13 +186,8 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
             String imei = getMappedImei(headerId);
             if (imei == null) {
-                imei = findImeiInPayload(payload);
-                if (imei != null) {
-                    updateImeiMapping(headerId, imei);
-                } else {
-                    LOGGER.warn("No IMEI mapped for headerId {}", headerId);
-                    continue;
-                }
+                LOGGER.warn("FA66S no IMEI mapped yet for headerId={} on {}", headerId, type);
+                continue;
             }
 
             DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -201,15 +203,17 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             position.setTime(time != null ? time : new Date());
 
             String valid = getValue(payload, 2);
-            boolean validFix = "A".equalsIgnoreCase(valid) || "V".equalsIgnoreCase(valid);
+            boolean validFix = "A".equalsIgnoreCase(valid);
 
-            double rawLatitude = parseDouble(getValue(payload, 3));
-            double rawLongitude = parseDouble(getValue(payload, 5));
             double latitude = parseCoordinate(getValue(payload, 3), getValue(payload, 4));
             double longitude = parseCoordinate(getValue(payload, 5), getValue(payload, 6));
-            position.setLatitude(latitude);
-            position.setLongitude(longitude);
-            if (!validFix && !Double.isNaN(rawLatitude) && !Double.isNaN(rawLongitude)) {
+            if (!Double.isNaN(latitude)) {
+                position.setLatitude(latitude);
+            }
+            if (!Double.isNaN(longitude)) {
+                position.setLongitude(longitude);
+            }
+            if (!Double.isNaN(latitude) && !Double.isNaN(longitude)) {
                 validFix = true;
             }
             position.setValid(validFix);
@@ -250,7 +254,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
             int wifiIndex = findWifiIndex(payload);
             if (wifiIndex != -1) {
-                position.set("wifi", String.join(",", Arrays.copyOfRange(payload, wifiIndex, payload.length)));
+                position.set("wifiRaw", String.join(",", Arrays.copyOfRange(payload, wifiIndex, payload.length)));
             }
 
             positions.add(position);
@@ -278,34 +282,25 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
     private void updateImeiMapping(String headerId, String imei) {
         cleanupMappings();
-        headerToImei.put(headerId, new ImeiMapping(imei, System.currentTimeMillis()));
+        headerToImei.put(headerId, new ImeiEntry(imei, System.currentTimeMillis()));
     }
 
     private String getMappedImei(String headerId) {
         cleanupMappings();
-        ImeiMapping mapping = headerToImei.get(headerId);
-        if (mapping == null) {
+        ImeiEntry entry = headerToImei.get(headerId);
+        if (entry == null) {
             return null;
         }
-        if (System.currentTimeMillis() - mapping.timestamp > MAPPING_TIMEOUT) {
+        if (System.currentTimeMillis() - entry.lastUpdate > MAPPING_TIMEOUT) {
             headerToImei.remove(headerId);
             return null;
         }
-        return mapping.imei;
+        return entry.imei;
     }
 
     private void cleanupMappings() {
         long now = System.currentTimeMillis();
-        headerToImei.entrySet().removeIf(entry -> now - entry.getValue().timestamp > MAPPING_TIMEOUT);
-    }
-
-    private String findImeiInPayload(String[] payload) {
-        for (String value : payload) {
-            if (value != null && value.matches("\\d{15}")) {
-                return value;
-            }
-        }
-        return null;
+        headerToImei.entrySet().removeIf(entry -> now - entry.getValue().lastUpdate > MAPPING_TIMEOUT);
     }
 
     private String getValue(String[] payload, int index) {
@@ -344,7 +339,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     private double parseCoordinate(String value, String hemisphere) {
         double coordinate = parseDouble(value);
         if (Double.isNaN(coordinate)) {
-            return 0;
+            return Double.NaN;
         }
         if (hemisphere != null) {
             if (hemisphere.equalsIgnoreCase("S") || hemisphere.equalsIgnoreCase("W")) {
@@ -359,7 +354,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     private int findWifiIndex(String[] payload) {
         for (int i = 0; i < payload.length; i++) {
             String value = payload[i];
-            if (value != null && value.contains(":")) {
+            if (value != null && WIFI_PATTERN.matcher(value).matches()) {
                 return i;
             }
         }
@@ -383,12 +378,12 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private void setBatteryAndSignal(Position position, String[] payload) {
-        Double batteryLevel = findPercentValue(payload, new int[] {11, 12, 10, 13});
+        Double batteryLevel = findPercentValue(payload, new int[] {12});
         if (batteryLevel != null) {
             position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
         }
 
-        Double signal = findPercentValue(payload, new int[] {12, 13, 11, 14});
+        Double signal = findPercentValue(payload, new int[] {13});
         if (signal != null) {
             position.set("signal", signal);
         }
@@ -404,13 +399,13 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private static class ImeiMapping {
+    private static class ImeiEntry {
         private final String imei;
-        private final long timestamp;
+        private final long lastUpdate;
 
-        private ImeiMapping(String imei, long timestamp) {
+        private ImeiEntry(String imei, long lastUpdate) {
             this.imei = imei;
-            this.timestamp = timestamp;
+            this.lastUpdate = lastUpdate;
         }
     }
 }
