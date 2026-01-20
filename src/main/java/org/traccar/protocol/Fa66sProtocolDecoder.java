@@ -16,6 +16,8 @@
 package org.traccar.protocol;
 
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
@@ -30,9 +32,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Fa66sProtocolDecoder.class);
 
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
@@ -54,6 +60,10 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             .any()
             .compile();
 
+    private static final long MAPPING_TIMEOUT = 24 * 60 * 60 * 1000L;
+
+    private final Map<String, ImeiMapping> headerToImei = new ConcurrentHashMap<>();
+
     public Fa66sProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
@@ -73,8 +83,11 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         String sentence = (String) msg;
-        List<String> frames = extractFrames(sentence);
-        if (!frames.isEmpty()) {
+        if (sentence.contains("3G*")) {
+            List<String> frames = extractFrames(sentence);
+            if (frames.isEmpty()) {
+                frames = List.of(sentence);
+            }
             return decodeFrames(channel, remoteAddress, frames);
         }
 
@@ -135,11 +148,28 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
                 continue;
             }
 
-            String deviceId = headerParts[1];
+            String headerId = headerParts[1];
             String type = headerParts[3];
+            String[] payload = frame.substring(commaIndex + 1).split(",", -1);
+
+            if ("RYIMEI".equals(type)) {
+                String imei = getValue(payload, 0);
+                if (imei != null && !imei.isEmpty()) {
+                    updateImeiMapping(headerId, imei);
+                }
+                continue;
+            }
 
             if ("LK".equals(type)) {
-                getDeviceSession(channel, remoteAddress, deviceId);
+                String imei = getMappedImei(headerId);
+                if (imei == null) {
+                    LOGGER.warn("No IMEI mapped for headerId {}", headerId);
+                    continue;
+                }
+                DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+                if (deviceSession == null) {
+                    LOGGER.warn("Unknown device IMEI {}", imei);
+                }
                 continue;
             }
 
@@ -147,12 +177,22 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
                 continue;
             }
 
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, deviceId);
-            if (deviceSession == null) {
-                continue;
+            String imei = getMappedImei(headerId);
+            if (imei == null) {
+                imei = findImeiInPayload(payload);
+                if (imei != null) {
+                    updateImeiMapping(headerId, imei);
+                } else {
+                    LOGGER.warn("No IMEI mapped for headerId {}", headerId);
+                    continue;
+                }
             }
 
-            String[] payload = frame.substring(commaIndex + 1).split(",", -1);
+            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+            if (deviceSession == null) {
+                LOGGER.warn("Unknown device IMEI {}", imei);
+                continue;
+            }
 
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
@@ -161,14 +201,15 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             position.setTime(time != null ? time : new Date());
 
             String valid = getValue(payload, 2);
-            // Devices can send "V" while still providing usable LTE fixes.
             boolean validFix = "A".equalsIgnoreCase(valid) || "V".equalsIgnoreCase(valid);
 
+            double rawLatitude = parseDouble(getValue(payload, 3));
+            double rawLongitude = parseDouble(getValue(payload, 5));
             double latitude = parseCoordinate(getValue(payload, 3), getValue(payload, 4));
             double longitude = parseCoordinate(getValue(payload, 5), getValue(payload, 6));
             position.setLatitude(latitude);
             position.setLongitude(longitude);
-            if (!validFix && latitude > 0 && longitude > 0) {
+            if (!validFix && !Double.isNaN(rawLatitude) && !Double.isNaN(rawLongitude)) {
                 validFix = true;
             }
             position.setValid(validFix);
@@ -233,6 +274,38 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             startIndex = sentence.indexOf('[', endIndex + 1);
         }
         return frames;
+    }
+
+    private void updateImeiMapping(String headerId, String imei) {
+        cleanupMappings();
+        headerToImei.put(headerId, new ImeiMapping(imei, System.currentTimeMillis()));
+    }
+
+    private String getMappedImei(String headerId) {
+        cleanupMappings();
+        ImeiMapping mapping = headerToImei.get(headerId);
+        if (mapping == null) {
+            return null;
+        }
+        if (System.currentTimeMillis() - mapping.timestamp > MAPPING_TIMEOUT) {
+            headerToImei.remove(headerId);
+            return null;
+        }
+        return mapping.imei;
+    }
+
+    private void cleanupMappings() {
+        long now = System.currentTimeMillis();
+        headerToImei.entrySet().removeIf(entry -> now - entry.getValue().timestamp > MAPPING_TIMEOUT);
+    }
+
+    private String findImeiInPayload(String[] payload) {
+        for (String value : payload) {
+            if (value != null && value.matches("\\d{15}")) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private String getValue(String[] payload, int index) {
@@ -329,5 +402,15 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             }
         }
         return null;
+    }
+
+    private static class ImeiMapping {
+        private final String imei;
+        private final long timestamp;
+
+        private ImeiMapping(String imei, long timestamp) {
+            this.imei = imei;
+            this.timestamp = timestamp;
+        }
     }
 }
