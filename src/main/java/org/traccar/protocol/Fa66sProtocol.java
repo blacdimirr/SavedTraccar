@@ -15,10 +15,10 @@
  */
 package org.traccar.protocol;
 
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
-import org.traccar.CharacterDelimiterFrameDecoder;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 import org.traccar.config.Config;
@@ -32,7 +32,7 @@ public class Fa66sProtocol extends BaseProtocol {
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
-                pipeline.addLast(new CharacterDelimiterFrameDecoder(8192, '#'));
+                pipeline.addLast(new LineBasedFrameDecoder(32768));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new Fa66sProtocolDecoder(Fa66sProtocol.this));
