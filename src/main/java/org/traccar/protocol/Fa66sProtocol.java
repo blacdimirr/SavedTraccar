@@ -24,6 +24,7 @@ import org.traccar.TrackerServer;
 import org.traccar.config.Config;
 
 import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
 
 public class Fa66sProtocol extends BaseProtocol {
 
@@ -33,8 +34,8 @@ public class Fa66sProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
                 pipeline.addLast(new LineBasedFrameDecoder(32768));
-                pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new StringDecoder());
+                pipeline.addLast(new StringDecoder(StandardCharsets.US_ASCII));
+                pipeline.addLast(new StringEncoder(StandardCharsets.US_ASCII));
                 pipeline.addLast(new Fa66sProtocolDecoder(Fa66sProtocol.this));
             }
         });

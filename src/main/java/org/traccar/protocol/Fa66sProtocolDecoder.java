@@ -16,8 +16,6 @@
 package org.traccar.protocol;
 
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
@@ -37,8 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Fa66sProtocolDecoder.class);
 
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
@@ -64,7 +60,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
     private static final Pattern WIFI_PATTERN = Pattern.compile("(?i)^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}.*$");
 
-    private final Map<String, ImeiEntry> headerToImei = new ConcurrentHashMap<>();
+    private static final Map<String, ImeiEntry> HEADER_TO_IMEI = new ConcurrentHashMap<>();
 
     public Fa66sProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -168,14 +164,19 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if ("LK".equals(type)) {
-                String imei = getMappedImei(headerId);
-                if (imei == null) {
-                    LOGGER.warn("FA66S no IMEI mapped yet for headerId={} on LK", headerId);
+                DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, headerId);
+                if (deviceSession == null) {
                     continue;
                 }
-                DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
-                if (deviceSession == null) {
-                    LOGGER.warn("Unknown device IMEI {}", imei);
+                String imei = getMappedImei(headerId);
+                if (imei != null) {
+                    Position position = new Position(getProtocolName());
+                    position.setDeviceId(deviceSession.getDeviceId());
+                    position.setTime(new Date());
+                    position.setValid(false);
+                    position.set("headerId", headerId);
+                    position.set("imei", imei);
+                    positions.add(position);
                 }
                 continue;
             }
@@ -184,15 +185,8 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
                 continue;
             }
 
-            String imei = getMappedImei(headerId);
-            if (imei == null) {
-                LOGGER.warn("FA66S no IMEI mapped yet for headerId={} on {}", headerId, type);
-                continue;
-            }
-
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, headerId);
             if (deviceSession == null) {
-                LOGGER.warn("Unknown device IMEI {}", imei);
                 continue;
             }
 
@@ -231,6 +225,12 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             double altitude = parseDouble(getValue(payload, 9));
             if (!Double.isNaN(altitude)) {
                 position.setAltitude(altitude);
+            }
+
+            position.set("headerId", headerId);
+            String imei = getMappedImei(headerId);
+            if (imei != null) {
+                position.set("imei", imei);
             }
 
             setBatteryAndSignal(position, payload);
@@ -282,17 +282,17 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
     private void updateImeiMapping(String headerId, String imei) {
         cleanupMappings();
-        headerToImei.put(headerId, new ImeiEntry(imei, System.currentTimeMillis()));
+        HEADER_TO_IMEI.put(headerId, new ImeiEntry(imei, System.currentTimeMillis()));
     }
 
     private String getMappedImei(String headerId) {
         cleanupMappings();
-        ImeiEntry entry = headerToImei.get(headerId);
+        ImeiEntry entry = HEADER_TO_IMEI.get(headerId);
         if (entry == null) {
             return null;
         }
         if (System.currentTimeMillis() - entry.lastUpdate > MAPPING_TIMEOUT) {
-            headerToImei.remove(headerId);
+            HEADER_TO_IMEI.remove(headerId);
             return null;
         }
         return entry.imei;
@@ -300,7 +300,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
 
     private void cleanupMappings() {
         long now = System.currentTimeMillis();
-        headerToImei.entrySet().removeIf(entry -> now - entry.getValue().lastUpdate > MAPPING_TIMEOUT);
+        HEADER_TO_IMEI.entrySet().removeIf(entry -> now - entry.getValue().lastUpdate > MAPPING_TIMEOUT);
     }
 
     private String getValue(String[] payload, int index) {
