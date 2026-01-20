@@ -15,7 +15,9 @@
  */
 package org.traccar.protocol;
 
-import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
@@ -33,7 +35,11 @@ public class Fa66sProtocol extends BaseProtocol {
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
-                pipeline.addLast(new LineBasedFrameDecoder(32768));
+                pipeline.addLast(new DelimiterBasedFrameDecoder(
+                        8192,
+                        Unpooled.wrappedBuffer(new byte[] {']'}),
+                        Delimiters.lineDelimiter()[0],
+                        Delimiters.lineDelimiter()[1]));
                 pipeline.addLast(new StringDecoder(StandardCharsets.US_ASCII));
                 pipeline.addLast(new StringEncoder(StandardCharsets.US_ASCII));
                 pipeline.addLast(new Fa66sProtocolDecoder(Fa66sProtocol.this));

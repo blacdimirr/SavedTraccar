@@ -24,6 +24,8 @@ import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 import org.traccar.session.DeviceSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -35,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Fa66sProtocolDecoder.class);
 
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
@@ -57,10 +61,12 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
     private static final long MAPPING_TIMEOUT = 24 * 60 * 60 * 1000L;
+    private static final long WARN_TIMEOUT = 5 * 60 * 1000L;
 
     private static final Pattern WIFI_PATTERN = Pattern.compile("(?i)^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}.*$");
 
     private static final Map<String, ImeiEntry> HEADER_TO_IMEI = new ConcurrentHashMap<>();
+    private static final Map<String, Long> HEADER_WARNINGS = new ConcurrentHashMap<>();
 
     public Fa66sProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -83,7 +89,9 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         if (sentence.contains("[")) {
             List<String> frames = extractFrames(sentence);
-            return decodeFrames(channel, remoteAddress, frames);
+            if (!frames.isEmpty()) {
+                return decodeFrames(channel, remoteAddress, frames);
+            }
         }
 
         Parser parser = new Parser(PATTERN, sentence);
@@ -164,20 +172,21 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if ("LK".equals(type)) {
-                DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, headerId);
+                DeviceSession deviceSession = resolveDeviceSession(channel, remoteAddress, headerId);
                 if (deviceSession == null) {
                     continue;
                 }
+                Position position = new Position(getProtocolName());
+                position.setDeviceId(deviceSession.getDeviceId());
+                position.setTime(new Date());
+                position.setValid(false);
+                position.set("headerId", headerId);
                 String imei = getMappedImei(headerId);
                 if (imei != null) {
-                    Position position = new Position(getProtocolName());
-                    position.setDeviceId(deviceSession.getDeviceId());
-                    position.setTime(new Date());
-                    position.setValid(false);
-                    position.set("headerId", headerId);
                     position.set("imei", imei);
-                    positions.add(position);
                 }
+                getLastLocation(position, position.getTime());
+                positions.add(position);
                 continue;
             }
 
@@ -185,7 +194,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
                 continue;
             }
 
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, headerId);
+            DeviceSession deviceSession = resolveDeviceSession(channel, remoteAddress, headerId);
             if (deviceSession == null) {
                 continue;
             }
@@ -272,6 +281,9 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
         while (startIndex != -1) {
             int endIndex = sentence.indexOf(']', startIndex + 1);
             if (endIndex == -1) {
+                if (startIndex == 0) {
+                    frames.add(sentence.substring(1));
+                }
                 break;
             }
             frames.add(sentence.substring(startIndex + 1, endIndex));
@@ -283,6 +295,7 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     private void updateImeiMapping(String headerId, String imei) {
         cleanupMappings();
         HEADER_TO_IMEI.put(headerId, new ImeiEntry(imei, System.currentTimeMillis()));
+        LOGGER.info("FA66S mapped headerId={} to imei={}", headerId, imei);
     }
 
     private String getMappedImei(String headerId) {
@@ -301,6 +314,43 @@ public class Fa66sProtocolDecoder extends BaseProtocolDecoder {
     private void cleanupMappings() {
         long now = System.currentTimeMillis();
         HEADER_TO_IMEI.entrySet().removeIf(entry -> now - entry.getValue().lastUpdate > MAPPING_TIMEOUT);
+    }
+
+    private DeviceSession resolveDeviceSession(Channel channel, SocketAddress remoteAddress, String headerId) {
+        String imei = getMappedImei(headerId);
+        DeviceSession deviceSession;
+        if (imei != null) {
+            deviceSession = getDeviceSession(channel, remoteAddress, imei, headerId);
+        } else {
+            deviceSession = getDeviceSession(channel, remoteAddress, headerId);
+        }
+        if (deviceSession == null) {
+            warnUnresolved(headerId, imei);
+            return null;
+        }
+        String resolvedId = deviceSession.getUniqueId();
+        if (imei != null && imei.equals(resolvedId)) {
+            LOGGER.debug("FA66S deviceSession resolved by IMEI={}", imei);
+        } else if (headerId.equals(resolvedId)) {
+            LOGGER.debug("FA66S deviceSession resolved by headerId={}", headerId);
+        } else {
+            LOGGER.debug("FA66S deviceSession resolved by uniqueId={}", resolvedId);
+        }
+        return deviceSession;
+    }
+
+    private void warnUnresolved(String headerId, String imei) {
+        long now = System.currentTimeMillis();
+        Long last = HEADER_WARNINGS.get(headerId);
+        if (last != null && now - last < WARN_TIMEOUT) {
+            return;
+        }
+        HEADER_WARNINGS.put(headerId, now);
+        if (imei != null) {
+            LOGGER.warn("FA66S unable to resolve deviceSession for headerId={} imei={}", headerId, imei);
+        } else {
+            LOGGER.warn("FA66S unable to resolve deviceSession for headerId={}", headerId);
+        }
     }
 
     private String getValue(String[] payload, int index) {
