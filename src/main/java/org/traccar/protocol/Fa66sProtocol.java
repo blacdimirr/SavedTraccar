@@ -32,7 +32,7 @@ public class Fa66sProtocol extends BaseProtocol {
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
-                pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, '#'));
+                pipeline.addLast(new CharacterDelimiterFrameDecoder(8192, '#'));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new Fa66sProtocolDecoder(Fa66sProtocol.this));
